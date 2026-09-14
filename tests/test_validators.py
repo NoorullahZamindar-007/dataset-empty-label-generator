@@ -14,6 +14,11 @@ def test_unrelated_files_are_unsupported(name):
     assert not is_supported_image(name)
 
 
+def test_macos_appledouble_files_are_unsupported():
+    assert not is_supported_image("photos/._AIRPLANE_000001.JPG")
+    assert build_label_mappings(["photos/._AIRPLANE_000001.JPG"], ".txt")[0].status == "Unsupported"
+
+
 def test_case_insensitive_collision_is_detected():
     mappings = build_label_mappings(["Bird01.jpg", "bird01.png"], ".txt")
     assert [mapping.status for mapping in mappings] == ["Collision", "Collision"]

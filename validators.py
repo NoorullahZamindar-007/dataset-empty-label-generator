@@ -28,7 +28,8 @@ class HasLabelPath(Protocol):
 def is_supported_image(path: str | Path | PurePosixPath) -> bool:
     """Return whether *path* has a supported image suffix, case-insensitively."""
 
-    return Path(str(path)).suffix.lower() in SUPPORTED_IMAGE_EXTENSIONS
+    filename = Path(str(path)).name
+    return not filename.startswith("._") and Path(filename).suffix.lower() in SUPPORTED_IMAGE_EXTENSIONS
 
 
 def validate_extension(extension: str) -> tuple[bool, str]:
