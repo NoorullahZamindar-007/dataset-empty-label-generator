@@ -12,7 +12,7 @@ from label_generator import (
     summarize_mappings,
 )
 LABEL_EXTENSIONS = [".txt", ".csv", ".json", ".jsonl", ".xml", ".yaml", ".yml", ".label", "Custom"]
-COLLISION_OPTIONS = {
+COLLISION_OPTIONS = { 
     "Skip duplicates": "skip_duplicates",
     "Keep first file": "keep_first",
     "Preserve directory structure": "preserve_structure",
