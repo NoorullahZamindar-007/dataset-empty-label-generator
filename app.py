@@ -11,7 +11,7 @@ from label_generator import (
     normalize_extension,
     summarize_mappings,
 )
-LABEL_EXTENSIONS = [".txt", ".csv", ".json", ".jsonl", ".xml", ".yaml", ".yml", ".label", "Custom"]
+LABEL_EXTENSIONS = [".txt", ".csv", ".json", ".jsonl", ".xml", ".yaml", ".yml", ".label", "Custom"] 
 COLLISION_OPTIONS = { 
     "Skip duplicates": "skip_duplicates",
     "Keep first file": "keep_first",
