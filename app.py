@@ -22,7 +22,6 @@ COLLISION_OPTIONS = {
     "Preserve directory structure": "preserve_structure",
     "Cancel generation": "cancel",
 }
-
 st.set_page_config(
     page_title="Dataset Empty Label Generator",
     page_icon=":material/note_add:",
