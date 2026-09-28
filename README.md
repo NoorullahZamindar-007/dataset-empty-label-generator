@@ -4,7 +4,8 @@ A local Streamlit application that scans an uploaded image directory and creates
 
 ## Features
 
-- Whole-directory upload with drag-and-drop support
+- Metadata-only large-folder selection for 10,000+ images
+- Standard whole-directory upload as a compatibility fallback
 - Optional recursive scanning and folder-structure preservation
 - Case-insensitive support for JPG, JPEG, PNG, WEBP, BMP, TIF, TIFF, and GIF
 - Built-in and validated custom label extensions
@@ -51,7 +52,7 @@ Open the local URL printed by Streamlit, normally <http://localhost:8501>.
 
 ## Usage
 
-1. Select or drop an image folder into the uploader.
+1. Keep **Large folder (recommended)** selected and choose an image folder. Only relative filenames are sent to the app.
 2. Choose a label extension and folder options.
 3. Review the summary, mapping preview, and Issues tab.
 4. Choose how collisions should be handled. `Skip duplicates` is the safe default.
@@ -117,6 +118,7 @@ The test suite covers normal, multi-period, uppercase, spaced, and Unicode names
 ```text
 .
 ├── app.py                    # Streamlit UI
+├── folder_picker.py          # Metadata-only browser folder selector
 ├── label_generator.py        # Mapping, statistics, and ZIP generation
 ├── validators.py             # Extension, filename, path, and collision checks
 ├── requirements.txt
@@ -133,9 +135,10 @@ The test suite covers normal, multi-period, uppercase, spaced, and Unicode names
 - **Nested files are missing:** Enable **Include subfolders**.
 - **No label is created for a file:** Confirm its extension is in the supported list and inspect the Issues tab.
 - **Generation is blocked:** Select a collision policy other than **Cancel generation**, or preserve folders when duplicate stems are in different directories.
-- **Large upload fails:** Streamlit's default upload limit is 200 MB per individual file. This app does not read image bytes, but the browser and Streamlit must still transfer the selected directory metadata/files.
+- **Large folder does not open:** Use a current Chrome, Edge, Firefox, or Safari browser. The metadata-only picker depends on browser directory-selection support.
+- **Standard upload fails:** Standard mode transfers every image and is intentionally a fallback for small datasets. Switch to **Large folder (recommended)** for 10,000+ images.
 - **`streamlit` is not recognized:** Activate the virtual environment, or run `python -m streamlit run app.py`.
 
 ## Safety
 
-Uploaded data is read-only. The application uses uploaded path metadata to build an in-memory ZIP and never deletes, renames, moves, modifies, overwrites, or writes beside source images.
+Source data is read-only. Large folder mode sends only relative path strings—not image contents—to build an in-memory ZIP. The application never deletes, renames, moves, modifies, overwrites, or writes beside source images.

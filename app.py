@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+from hashlib import sha256
+
 import pandas as pd
 import streamlit as st
 
+from folder_picker import metadata_folder_picker
 from label_generator import (
     build_label_mappings,
     create_empty_labels_zip,
     normalize_extension,
     summarize_mappings,
 )
+
 LABEL_EXTENSIONS = [".txt", ".csv", ".json", ".jsonl", ".xml", ".yaml", ".yml", ".label", "Custom"]
 COLLISION_OPTIONS = {
     "Skip duplicates": "skip_duplicates",
@@ -28,16 +32,34 @@ st.session_state.setdefault("labels_zip", None)
 st.session_state.setdefault("generated_signature", None)
 
 st.title("Dataset Empty Label Generator", icon=":material/note_add:")
-st.caption("Create safe, zero-byte annotation files from an image dataset — entirely in your browser session.")
+st.caption("Create safe, zero-byte annotation files from image filenames without decoding the images.")
 
 with st.container(border=True):
-    uploaded_files = st.file_uploader(
-        "Select or drop an image folder",
-        accept_multiple_files="directory",
-        help="The browser supplies filenames and relative paths. Image contents are never decoded or copied into the ZIP.",
-        key="dataset_folder",
+    input_mode = st.segmented_control(
+        "Folder loading mode",
+        ["Large folder (recommended)", "Standard upload"],
+        default="Large folder (recommended)",
+        key="input_mode",
     )
-    st.caption("Your source files are treated as read-only. Only an in-memory labels ZIP is created.")
+    if input_mode == "Large folder (recommended)":
+        paths = metadata_folder_picker(key="metadata_folder")
+        st.caption(
+            "Optimized for 10,000+ images: only relative filenames are sent to the app; image bytes stay on your device."
+        )
+    else:
+        uploaded_files = st.file_uploader(
+            "Select or drop an image folder",
+            accept_multiple_files="directory",
+            help="Compatibility mode. Streamlit uploads every selected file, so use it only for smaller datasets.",
+            key="dataset_folder",
+        )
+        paths = [uploaded.name for uploaded in uploaded_files]
+        st.warning(
+            "Standard upload transfers every image and may fail for very large folders. "
+            "Use Large folder mode for 10,000+ images.",
+            icon=":material/warning:",
+        )
+    st.caption("Source files are read-only. The app creates only an in-memory labels ZIP.")
 
 generator_tab, preview_tab, issues_tab, help_tab = st.tabs(
     [
@@ -84,8 +106,8 @@ except ValueError as exc:
     extension_error = str(exc)
 
 effective_preserve = preserve_structure or collision_choice == "Preserve directory structure"
-paths = [uploaded.name for uploaded in uploaded_files]
-if uploaded_files and normalized_extension:
+has_selection = bool(paths)
+if has_selection and normalized_extension:
     with generator_tab:
         with st.spinner("Scanning dataset...", show_time=True):
             mappings = build_label_mappings(
@@ -138,7 +160,7 @@ with generator_tab:
     if collision_strategy == "preserve_structure":
         collision_strategy = "skip_duplicates"
 
-    if not uploaded_files:
+    if not has_selection:
         st.info("Select a folder to scan its files and build the preview.", icon=":material/folder_open:")
     elif not mappings:
         st.warning("No files remain after applying the subfolder setting.", icon=":material/warning:")
@@ -152,7 +174,8 @@ with generator_tab:
         )
 
     signature = (
-        tuple(paths),
+        sha256("\0".join(paths).encode("utf-8")).hexdigest(),
+        len(paths),
         normalized_extension,
         include_subfolders,
         effective_preserve,
@@ -230,7 +253,7 @@ with preview_tab:
 with issues_tab:
     st.subheader("Dataset issues")
     issues = [mapping for mapping in mappings if mapping.status != "Ready"]
-    if not uploaded_files:
+    if not has_selection:
         st.info("Upload a folder to inspect collisions and unsupported files.", icon=":material/folder_open:")
     elif not issues:
         st.success("No collisions, invalid filenames, or unsupported files detected.", icon=":material/check_circle:")
@@ -273,7 +296,8 @@ and packages empty label files under `labels/`. Image bytes are not decoded, cop
 - **Supported images:** `.jpg`, `.jpeg`, `.png`, `.webp`, `.bmp`, `.tif`, `.tiff`, and `.gif` (case-insensitive).
 - **Label formats:** The selected extension changes only the filename. Even `.csv`, `.json`, and `.xml` labels contain exactly 0 bytes.
 - **Collisions:** Names are compared case-insensitively for Windows safety. Skip duplicates is the default; keeping the first is deterministic; preserving folders can resolve same-name images in different folders.
-- **Large datasets:** Browsers and Streamlit enforce upload limits per file. The app avoids reading image content, but the browser still performs the directory upload.
+- **Large datasets:** Large folder mode sends only relative filenames to Python. Image bytes remain on the user's device, making 10,000+ file datasets practical.
+- **Compatibility mode:** Standard upload transfers image files through Streamlit and is intended only for smaller datasets.
 """
     )
     st.code("my.image.001.jpg  →  labels/my.image.001.txt", language="text")

@@ -87,3 +87,16 @@ def test_final_verification_scenario():
         }
         assert set(archive.namelist()) == expected
         assert all(archive.getinfo(name).file_size == 0 for name in expected)
+
+
+def test_ten_thousand_images_generate_zero_byte_labels():
+    files = [f"dataset/batch_{number // 1000}/image_{number:05}.JPG" for number in range(10_000)]
+    mappings = build_label_mappings(files, ".txt", preserve_structure=True)
+
+    assert len(mappings) == 10_000
+    assert all(mapping.status == "Ready" for mapping in mappings)
+    with ZipFile(create_empty_labels_zip(mappings)) as archive:
+        names = archive.namelist()
+        assert len(names) == 10_000
+        assert archive.getinfo(names[0]).file_size == 0
+        assert archive.getinfo(names[-1]).file_size == 0
